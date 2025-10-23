@@ -5,32 +5,47 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>QR-Gen</title>
     <script src="https://cdn.tailwindcss.com"></script>
+    
     <script src="https://cdnjs.cloudflare.com/ajax/libs/qrious/4.0.2/qrious.min.js"></script>
+    
+    <script src="https://unpkg.com/html5-qrcode/html5-qrcode.min.js"></script>
+    
     <style>
-        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
+        /* NUOVO: Importazione aggiornata per includere Gugi */
+        @import url('https://fonts.googleapis.com/css2?family=Gugi&family=Inter:wght@400;500;600;700&display=swap');
+        
         body {
             font-family: 'Inter', sans-serif;
+        }
+        
+        /* Stile per il riquadro della videocamera */
+        #qr-reader video {
+            width: 100% !important;
+            height: auto !important;
+            border-radius: 1.5rem; /* 24px */
+        }
+
+        /* NUOVO: Classe per applicare il font Gugi */
+        .font-gugi {
+            font-family: 'Gugi', cursive;
         }
     </style>
 </head>
 <body class="min-h-screen bg-gradient-to-br from-purple-50 via-blue-50 to-indigo-100">
     <div class="max-w-4xl mx-auto p-4">
-        <!-- Header -->
-        <div class="text-center mb-8 pt-8">
-            <div class="inline-flex items-center justify-center w-16 h-16 bg-gradient-to-r from-purple-600 to-blue-600 rounded-2xl mb-4">
+        
+        <div class="flex justify-center items-center gap-4 mb-8 pt-8">
+            <div class="inline-flex items-center justify-center w-16 h-16 bg-gradient-to-r from-purple-600 to-blue-600 rounded-2xl">
                 <svg class="w-8 h-8 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v1m6 11h2m-6 0h-2v4m0-11v3m0 0h.01M12 12h4.01M16 20h4M4 12h4m12 0h.01M5 8h2a1 1 0 001-1V5a1 1 0 00-1-1H5a1 1 0 00-1 1v2a1 1 0 001 1zm12 0h2a1 1 0 001-1V5a1 1 0 00-1-1h-2a1 1 0 00-1 1v2a1 1 0 001 1zM5 20h2a1 1 0 001-1v-2a1 1 0 00-1-1H5a1 1 0 00-1 1v2a1 1 0 001 1z"></path>
                 </svg>
             </div>
-            <h1 class="text-4xl font-bold bg-gradient-to-r from-purple-600 to-blue-600 bg-clip-text text-transparent mb-2">
+            <h1 class="font-gugi text-4xl font-bold bg-gradient-to-r from-purple-600 to-blue-600 bg-clip-text text-transparent">
                 <span id="appTitle">QR-Gen</span>
             </h1>
-            <p class="text-gray-600 text-lg" id="appDescription">Genera codici QR per URL, testo e informazioni di contatto</p>
-        </div>
-
-        <!-- Main Card -->
+            
+            </div>
         <div class="bg-white rounded-3xl shadow-2xl overflow-hidden">
-            <!-- Tabs -->
             <div class="border-b border-gray-200">
                 <nav class="flex">
                     <button onclick="switchTab('url')" id="tab-url" class="tab-button flex-1 flex items-center justify-center gap-2 px-6 py-4 text-sm font-medium transition-all duration-200 text-purple-600 border-b-2 border-purple-600 bg-purple-50">
@@ -51,122 +66,145 @@
                         </svg>
                         Contatto
                     </button>
+                    <button onclick="switchTab('scan')" id="tab-scan" class="tab-button flex-1 flex items-center justify-center gap-2 px-6 py-4 text-sm font-medium transition-all duration-200 text-gray-500 hover:text-gray-700 hover:bg-gray-50">
+                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 8V6a2 2 0 012-2h2M4 16v2a2 2 0 002 2h2M16 4h2a2 2 0 012 2v2M16 20h2a2 2 0 002-2v-2M5 12h14"></path>
+                        </svg>
+                        Scansiona
+                    </button>
                 </nav>
             </div>
 
-            <!-- Content -->
-            <div class="p-8">
-                <div class="grid lg:grid-cols-2 gap-8">
-                    <!-- Input Section -->
-                    <div class="space-y-6">
-                        <h2 class="text-2xl font-semibold text-gray-800 mb-4" id="sectionTitle">Inserisci URL</h2>
+            <div id="generator-content">
+                <div class="p-8">
+                    <div class="grid lg:grid-cols-2 gap-8">
+                        <div class="space-y-6">
+                            <h2 class="text-2xl font-semibold text-gray-800 mb-4" id="sectionTitle">Inserisci URL</h2>
 
-                        <!-- URL Form -->
-                        <div id="url-form" class="space-y-4">
-                            <div>
-                                <label class="block text-sm font-medium text-gray-700 mb-2">URL del Sito Web</label>
-                                <input type="url" id="url-input" placeholder="esempio.it o https://esempio.it" class="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-purple-500 focus:border-transparent transition-all duration-200">
-                                <p class="text-xs text-gray-500 mt-1">Inserisci l'URL di un sito web. Se non includi http://, aggiungeremo automaticamente https://.</p>
-                            </div>
-                        </div>
-
-                        <!-- Text Form -->
-                        <div id="text-form" class="space-y-4 hidden">
-                            <div>
-                                <label class="block text-sm font-medium text-gray-700 mb-2">Contenuto Testuale</label>
-                                <textarea id="text-input" rows="4" placeholder="Inserisci qualsiasi testo per generare il codice QR..." class="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-purple-500 focus:border-transparent transition-all duration-200 resize-none"></textarea>
-                            </div>
-                        </div>
-
-                        <!-- Contact Form -->
-                        <div id="contact-form" class="space-y-4 hidden">
-                            <div class="grid grid-cols-2 gap-4">
+                            <div id="url-form" class="space-y-4">
                                 <div>
-                                    <label class="block text-sm font-medium text-gray-700 mb-2">Nome</label>
-                                    <input type="text" id="contact-firstName" placeholder="Marco" class="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-purple-500 focus:border-transparent transition-all duration-200">
+                                    <label class="block text-sm font-medium text-gray-700 mb-2">URL del Sito Web</label>
+                                    <input type="url" id="url-input" placeholder="esempio.it o https://esempio.it" class="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-purple-500 focus:border-transparent transition-all duration-200">
+                                    <p class="text-xs text-gray-500 mt-1">Inserisci l'URL di un sito web. Se non includi http://, aggiungeremo automatically https://.</p>
+                                </div>
+                            </div>
+
+                            <div id="text-form" class="space-y-4 hidden">
+                                <div>
+                                    <label class="block text-sm font-medium text-gray-700 mb-2">Contenuto Testuale</label>
+                                    <textarea id="text-input" rows="4" placeholder="Inserisci qualsiasi testo per generare il codice QR..." class="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-purple-500 focus:border-transparent transition-all duration-200 resize-none"></textarea>
+                                </div>
+                            </div>
+
+                            <div id="contact-form" class="space-y-4 hidden">
+                                <div class="grid grid-cols-2 gap-4">
+                                    <div>
+                                        <label class="block text-sm font-medium text-gray-700 mb-2">Nome</label>
+                                        <input type="text" id="contact-firstName" placeholder="Marco" class="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-purple-500 focus:border-transparent transition-all duration-200">
+                                    </div>
+                                    <div>
+                                        <label class="block text-sm font-medium text-gray-700 mb-2">Cognome</label>
+                                        <input type="text" id="contact-lastName" placeholder="Rossi" class="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-purple-500 focus:border-transparent transition-all duration-200">
+                                    </div>
                                 </div>
                                 <div>
-                                    <label class="block text-sm font-medium text-gray-700 mb-2">Cognome</label>
-                                    <input type="text" id="contact-lastName" placeholder="Rossi" class="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-purple-500 focus:border-transparent transition-all duration-200">
+                                    <label class="block text-sm font-medium text-gray-700 mb-2">Numero di Telefono</label>
+                                    <input type="tel" id="contact-phone" placeholder="+39 333 123 4567" class="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-purple-500 focus:border-transparent transition-all duration-200">
+                                </div>
+                                <div>
+                                    <label class="block text-sm font-medium text-gray-700 mb-2">Indirizzo Email</label>
+                                    <input type="email" id="contact-email" placeholder="marco.rossi@esempio.it" class="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-purple-500 focus:border-transparent transition-all duration-200">
+                                </div>
+                                <div>
+                                    <label class="block text-sm font-medium text-gray-700 mb-2">Organizzazione</label>
+                                    <input type="text" id="contact-organization" placeholder="Nome Azienda" class="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-purple-500 focus:border-transparent transition-all duration-200">
+                                </div>
+                                <div>
+                                    <label class="block text-sm font-medium text-gray-700 mb-2">Sito Web</label>
+                                    <input type="url" id="contact-url" placeholder="https://esempio.it" class="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-purple-500 focus:border-transparent transition-all duration-200">
                                 </div>
                             </div>
-                            <div>
-                                <label class="block text-sm font-medium text-gray-700 mb-2">Numero di Telefono</label>
-                                <input type="tel" id="contact-phone" placeholder="+39 333 123 4567" class="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-purple-500 focus:border-transparent transition-all duration-200">
-                            </div>
-                            <div>
-                                <label class="block text-sm font-medium text-gray-700 mb-2">Indirizzo Email</label>
-                                <input type="email" id="contact-email" placeholder="marco.rossi@esempio.it" class="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-purple-500 focus:border-transparent transition-all duration-200">
-                            </div>
-                            <div>
-                                <label class="block text-sm font-medium text-gray-700 mb-2">Organizzazione</label>
-                                <input type="text" id="contact-organization" placeholder="Nome Azienda" class="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-purple-500 focus:border-transparent transition-all duration-200">
-                            </div>
-                            <div>
-                                <label class="block text-sm font-medium text-gray-700 mb-2">Sito Web</label>
-                                <input type="url" id="contact-url" placeholder="https://esempio.it" class="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-purple-500 focus:border-transparent transition-all duration-200">
-                            </div>
-                        </div>
 
-                        <button onclick="resetForm()" class="w-full px-6 py-3 bg-gray-100 text-gray-700 rounded-xl hover:bg-gray-200 transition-all duration-200 font-medium">
-                            Cancella Tutti i Campi
-                        </button>
-                    </div>
-
-                    <!-- QR Code Display Section -->
-                    <div class="flex flex-col items-center space-y-6">
-                        <h2 class="text-2xl font-semibold text-gray-800">Codice QR Generato</h2>
-                        
-                        <div class="bg-gray-50 rounded-2xl p-8 w-full max-w-sm">
-                            <div id="qr-display" class="text-center py-16">
-                                <svg class="w-16 h-16 text-gray-300 mx-auto mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v1m6 11h2m-6 0h-2v4m0-11v3m0 0h.01M12 12h4.01M16 20h4M4 12h4m12 0h.01M5 8h2a1 1 0 001-1V5a1 1 0 00-1-1H5a1 1 0 00-1 1v2a1 1 0 001 1zm12 0h2a1 1 0 001-1V5a1 1 0 00-1-1h-2a1 1 0 00-1 1v2a1 1 0 001 1zM5 20h2a1 1 0 001-1v-2a1 1 0 00-1-1H5a1 1 0 00-1 1v2a1 1 0 001 1z"></path>
-                                </svg>
-                                <p class="text-gray-500">Compila il modulo per generare il tuo codice QR</p>
-                            </div>
-                            <div id="qr-container" class="hidden">
-                                <div class="flex justify-center">
-                                    <canvas id="qr-canvas"></canvas>
-                                </div>
-                                <p class="text-sm text-gray-600 mt-4 text-center">Scansiona questo codice QR con il tuo dispositivo</p>
-                            </div>
-                        </div>
-
-                        <div id="qr-actions" class="hidden flex gap-4 w-full max-w-sm">
-                            <button onclick="downloadQR()" class="flex-1 flex items-center justify-center gap-2 px-6 py-3 bg-gradient-to-r from-purple-600 to-blue-600 text-white rounded-xl hover:from-purple-700 hover:to-blue-700 transition-all duration-200 font-medium shadow-lg">
-                                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"></path>
-                                </svg>
-                                Scarica
-                            </button>
-                            <button onclick="copyData()" id="copy-btn" class="flex-1 flex items-center justify-center gap-2 px-6 py-3 bg-gray-100 text-gray-700 rounded-xl hover:bg-gray-200 transition-all duration-200 font-medium">
-                                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z"></path>
-                                </svg>
-                                Copia Dati
+                            <button onclick="resetForm()" class="w-full px-6 py-3 bg-gray-100 text-gray-700 rounded-xl hover:bg-gray-200 transition-all duration-200 font-medium">
+                                Cancella Tutti i Campi
                             </button>
                         </div>
 
-                        <div id="qr-data-display" class="hidden w-full max-w-sm">
-                            <h3 class="text-sm font-medium text-gray-700 mb-2">Dati del Codice QR:</h3>
-                            <div class="bg-gray-100 rounded-lg p-3 text-xs text-gray-600 max-h-32 overflow-y-auto">
-                                <pre id="qr-data-text" class="whitespace-pre-wrap break-words"></pre>
+                        <div class="flex flex-col items-center space-y-6">
+                            <h2 class="text-2xl font-semibold text-gray-800">Codice QR Generato</h2>
+                            
+                            <div class="bg-gray-50 rounded-2xl p-8 w-full max-w-sm">
+                                <div id="qr-display" class="text-center py-16">
+                                    <svg class="w-16 h-16 text-gray-300 mx-auto mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v1m6 11h2m-6 0h-2v4m0-11v3m0 0h.01M12 12h4.01M16 20h4M4 12h4m12 0h.01M5 8h2a1 1 0 001-1V5a1 1 0 00-1-1H5a1 1 0 00-1 1v2a1 1 0 001 1zm12 0h2a1 1 0 001-1V5a1 1 0 00-1-1h-2a1 1 0 00-1 1v2a1 1 0 001 1zM5 20h2a1 1 0 001-1v-2a1 1 0 00-1-1H5a1 1 0 00-1 1v2a1 1 0 001 1z"></path>
+                                    </svg>
+                                    <p class="text-gray-500">Compila il modulo per generare il tuo codice QR</p>
+                                </div>
+                                <div id="qr-container" class="hidden">
+                                    <div class="flex justify-center">
+                                        <canvas id="qr-canvas"></canvas>
+                                    </div>
+                                    <p class="text-sm text-gray-600 mt-4 text-center">Scansiona questo codice QR con il tuo dispositivo</p>
+                                </div>
+                            </div>
+
+                            <div id="qr-actions" class="hidden flex gap-4 w-full max-w-sm">
+                                <button onclick="downloadQR()" class="flex-1 flex items-center justify-center gap-2 px-6 py-3 bg-gradient-to-r from-purple-600 to-blue-600 text-white rounded-xl hover:from-purple-700 hover:to-blue-700 transition-all duration-200 font-medium shadow-lg">
+                                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"></path>
+                                    </svg>
+                                    Scarica
+                                </button>
+                                <button onclick="copyData()" id="copy-btn" class="flex-1 flex items-center justify-center gap-2 px-6 py-3 bg-gray-100 text-gray-700 rounded-xl hover:bg-gray-200 transition-all duration-200 font-medium">
+                                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z"></path>
+                                    </svg>
+                                    Copia Dati
+                                </button>
+                            </div>
+
+                            <div id="qr-data-display" class="hidden w-full max-w-sm">
+                                <h3 class="text-sm font-medium text-gray-700 mb-2">Dati del Codice QR:</h3>
+                                <div class="bg-gray-100 rounded-lg p-3 text-xs text-gray-600 max-h-32 overflow-y-auto">
+                                    <pre id="qr-data-text" class="whitespace-pre-wrap break-words"></pre>
+                                </div>
                             </div>
                         </div>
                     </div>
                 </div>
-            </div>
-        </div>
+            </div> <div id="scanner-content" class="p-8 hidden">
+                <div class="max-w-md mx-auto">
+                    <h2 class="text-2xl font-semibold text-gray-800 mb-6 text-center">Scansiona un Codice QR</h2>
+                    
+                    <div id="qr-reader" class="w-full bg-gray-100 rounded-2xl overflow-hidden shadow-inner aspect-square flex items-center justify-center">
+                        <p class="text-gray-500 p-4 text-center">In attesa della videocamera...</p>
+                    </div>
+                    
+                    <div id="qr-reader-results" class="mt-6 hidden">
+                        <h3 class="text-lg font-semibold text-gray-800">Risultato della Scansione:</h3>
+                        <div class="bg-gray-100 rounded-lg p-4 mt-2">
+                            <pre id="scan-result-text" class="whitespace-pre-wrap break-words text-gray-700"></pre>
+                        </div>
+                        <a id="scan-result-link" href="#" target="_blank" rel="noopener noreferrer" class="hidden mt-4 w-full flex items-center justify-center gap-2 px-6 py-3 bg-gradient-to-r from-purple-600 to-blue-600 text-white rounded-xl hover:from-purple-700 hover:to-blue-700 transition-all duration-200 font-medium shadow-lg">
+                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14"></path>
+                            </svg>
+                            Apri Link
+                        </a>
+                    </div>
+                </div>
+            </div> </div>
 
-        <!-- Footer -->
         <div class="text-center mt-8 text-gray-500 text-sm pb-8">
-Programmato con <span class="heart">❤</span> da <a href="https://github.com/tytus44/" target="_blank">NeRO</a>
+            Programmato con <span class="heart">❤</span> da <a href="https://github.com/tytus44/" target="_blank">NeRO</a>
         </div>
     </div>
 
     <script>
         let currentTab = 'url';
         let currentQRData = '';
+        // Variabile per l'istanza dello scanner
+        let html5QrCodeScanner = null;
 
         // Initialize
         document.addEventListener('DOMContentLoaded', function() {
@@ -180,10 +218,90 @@ Programmato con <span class="heart">❤</span> da <a href="https://github.com/ty
             });
         });
 
+        // Funzione per avviare lo scanner
+        function startScanner() {
+            // Pulisce i risultati precedenti
+            const resultsContainer = document.getElementById('qr-reader-results');
+            const resultText = document.getElementById('scan-result-text');
+            const resultLink = document.getElementById('scan-result-link');
+            
+            resultsContainer.classList.add('hidden');
+            resultText.textContent = '';
+            resultLink.classList.add('hidden');
+            resultLink.href = '#';
+
+            try {
+                // Crea una nuova istanza dello scanner
+                // Ora 'Html5Qrcode' è definito grazie allo script nel <head>
+                html5QrCodeScanner = new Html5Qrcode("qr-reader"); // ID del div
+                
+                const config = { fps: 10, qrbox: { width: 250, height: 250 } };
+                
+                // Callback per quando la scansione ha successo
+                const qrCodeSuccessCallback = (decodedText, decodedResult) => {
+                    resultText.textContent = decodedText;
+                    resultsContainer.classList.remove('hidden');
+                    
+                    // Controlla se è un URL e mostra il pulsante "Apri Link"
+                    if (decodedText.startsWith('http://') || decodedText.startsWith('https://') || decodedText.startsWith('www.')) {
+                        resultLink.href = decodedText.startsWith('www.') ? 'https://' + decodedText : decodedText;
+                        resultLink.classList.remove('hidden');
+                    }
+                };
+                
+                // Callback per errori (opzionale, utile per debug)
+                const qrCodeErrorCallback = (errorMessage) => {
+                    // console.warn(errorMessage);
+                };
+
+                // Avvia la videocamera (preferendo quella posteriore "environment")
+                html5QrCodeScanner.start(
+                    { facingMode: "environment" }, 
+                    config,
+                    qrCodeSuccessCallback,
+                    qrCodeErrorCallback
+                ).catch(err => {
+                    console.error("Impossibile avviare lo scanner", err);
+                    document.getElementById('qr-reader').innerHTML = `<p class="text-red-500 p-4 text-center">Errore: Impossibile accedere alla videocamera. Assicurati di aver dato i permessi al browser.</p>`;
+                });
+
+            } catch (err) {
+                console.error("Errore durante l'inizializzazione dello scanner:", err);
+            }
+        }
+
+        // Funzione per fermare lo scanner
+        function stopScanner() {
+            if (html5QrCodeScanner) {
+                try {
+                    // Controlla se lo scanner è in esecuzione prima di fermarlo
+                    if (html5QrCodeScanner.getState() === Html5Qrcode.SCANNING) {
+                        html5QrCodeScanner.stop().then(ignore => {
+                            // Scanner fermato con successo
+                            console.log("Scanner fermato.");
+                        }).catch(err => {
+                            console.error("Errore durante l'arresto dello scanner:", err);
+                        });
+                    }
+                    html5QrCodeScanner.clear(); // Pulisce l'interfaccia
+                } catch (err) {
+                    console.error("Errore grave durante l'arresto:", err);
+                }
+                html5QrCodeScanner = null;
+            }
+            // Ripristina il messaggio di default nel riquadro
+             document.getElementById('qr-reader').innerHTML = `<p class="text-gray-500 p-4 text-center">In attesa della videocamera...</p>`;
+        }
+
+
+        // MODIFICATO: La funzione switchTab ora gestisce anche lo scanner
         function switchTab(tab) {
+            // Ferma lo scanner PRIMA di cambiare tab
+            stopScanner();
+            
             currentTab = tab;
             
-            // Update tab buttons
+            // Aggiorna i pulsanti dei tab
             document.querySelectorAll('.tab-button').forEach(btn => {
                 btn.classList.remove('text-purple-600', 'border-b-2', 'border-purple-600', 'bg-purple-50');
                 btn.classList.add('text-gray-500', 'hover:text-gray-700', 'hover:bg-gray-50');
@@ -193,25 +311,38 @@ Programmato con <span class="heart">❤</span> da <a href="https://github.com/ty
             activeTab.classList.remove('text-gray-500', 'hover:text-gray-700', 'hover:bg-gray-50');
             activeTab.classList.add('text-purple-600', 'border-b-2', 'border-purple-600', 'bg-purple-50');
             
-            // Hide all forms
+            // Nasconde tutti i form e i pannelli di contenuto
             document.getElementById('url-form').classList.add('hidden');
             document.getElementById('text-form').classList.add('hidden');
             document.getElementById('contact-form').classList.add('hidden');
+            document.getElementById('generator-content').classList.add('hidden');
+            document.getElementById('scanner-content').classList.add('hidden');
             
-            // Show active form
-            document.getElementById(`${tab}-form`).classList.remove('hidden');
             
-            // Update section title
-            const titles = {
-                'url': 'Inserisci URL',
-                'text': 'Inserisci Testo',
-                'contact': 'Informazioni di Contatto'
-            };
-            document.getElementById('sectionTitle').textContent = titles[tab];
-            
-            // Regenerate QR code
-            generateQR();
+            if (tab === 'url' || tab === 'text' || tab === 'contact') {
+                // --- Sezione Generatore ---
+                document.getElementById('generator-content').classList.remove('hidden');
+                document.getElementById(`${tab}-form`).classList.remove('hidden');
+                
+                // Aggiorna titolo sezione
+                const titles = {
+                    'url': 'Inserisci URL',
+                    'text': 'Inserisci Testo',
+                    'contact': 'Informazioni di Contatto'
+                };
+                document.getElementById('sectionTitle').textContent = titles[tab];
+                
+                // Rigenera QR
+                generateQR();
+            } else if (tab === 'scan') {
+                // --- Sezione Scanner ---
+                document.getElementById('scanner-content').classList.remove('hidden');
+                // Avvia lo scanner
+                startScanner();
+            }
         }
+
+        // --- Funzioni del Generatore (invariate) ---
 
         function formatUrl(url) {
             if (!url.trim()) return '';
@@ -229,7 +360,7 @@ Programmato con <span class="heart">❤</span> da <a href="https://github.com/ty
             const organization = document.getElementById('contact-organization').value;
             const url = document.getElementById('contact-url').value;
             
-            if (!firstName && !lastName && !phone && !email) {
+            if (!firstName && !lastName && !phone && !email && !organization && !url) {
                 return '';
             }
             
@@ -257,6 +388,8 @@ END:VCARD`;
                 case 'contact':
                     data = generateVCard();
                     break;
+                case 'scan': // Non fare nulla se siamo sul tab scan
+                    return;
             }
             
             currentQRData = data;
@@ -335,11 +468,8 @@ END:VCARD`;
             document.getElementById('contact-organization').value = '';
             document.getElementById('contact-url').value = '';
             
-            currentQRData = '';
-            document.getElementById('qr-display').classList.remove('hidden');
-            document.getElementById('qr-container').classList.add('hidden');
-            document.getElementById('qr-actions').classList.add('hidden');
-            document.getElementById('qr-data-display').classList.add('hidden');
+            // Richiama generateQR per aggiornare la UI
+            generateQR();
         }
     </script>
 </body>
